@@ -21,7 +21,7 @@ export class Api {
 
         return await axios.get(`${this.baseUrl}/wallet-balance`, config)
             .then((res) => {
-
+                // TODO error handling on the success property of res.data
                 return res.data.data;
             })
             .catch((err) => {
@@ -38,7 +38,7 @@ export class Api {
 
         return await axios.get(`${this.baseUrl}/list-assets`, config)
             .then((res) => {
-
+                // TODO error handling on the success property of res.data
                 return res.data.data;
             })
             .catch((err) => {
@@ -54,12 +54,29 @@ export class Api {
         let config = this.axiosConfig;
         config["headers"] = this.headers;
 
-        return await axios.post(`${this.baseUrl}/mint-asset`, config, asset)
+        return await axios.post(`${this.baseUrl}/mint-asset`, asset, config)
             .then((res) => {
                 return res.data;
             })
             .catch((err) => {
                 console.log("An error occurred communicating with the API while preparing a new asset for mint: ", err)
+                return null;
+            })
+    }
+
+    /**
+     * @fastMintNewAsset
+     */
+    async quickMintAsset(asset) {
+        let config = this.axiosConfig;
+        config["headers"] = this.headers;
+
+        return await axios.post(`${this.baseUrl}/fast-mint-asset`, asset, config)
+            .then((res) => {
+                return res.data;
+            })
+            .catch((err) => {
+                console.log("An error occurred communicating with the API while fast minting a new asset: ", err);
                 return null;
             })
     }
@@ -72,15 +89,32 @@ export class Api {
         let config = this.axiosConfig;
         config["headers"] = this.headers;
 
-        return await axios.post(`${this.baseUrl}/mint-asset`, config, {"name": name, "amount": parseInt(amount)})
+        return await axios.post(`${this.baseUrl}/mint-new-group`, {"name": name, "amount": parseInt(amount)}, config)
             .then((res) => {
-                return res.data.data;
+                return res.data;
             })
             .catch((err) => {
-                console.log("An error occurred communicating with the API while preparing a mint of an asset group: ", err)
+                console.log("An error occurred communicating with the API while preparing a mint of an asset group: ", err);
                 return null;
             })
     }
+    /**
+     * @fastMintNewGroup
+     */
+    async quickMintNewGroup(name, amount) {
+        let config = this.axiosConfig;
+        config["headers"] = this.headers;
+
+        return await axios.post(`${this.baseUrl}/fast-mint-new-group`, {"name": name, "amount": parseInt(amount)}, config)
+            .then((res) => {
+                return res.data;
+            })
+            .catch((err) => {
+                console.log("An error occurred communicating with the API while fast minting a tranche: ", err);
+                return null;
+            })
+    }
+
     /**
      * @finalizeBatches
      */
@@ -90,7 +124,7 @@ export class Api {
 
         return await axios.post(`${this.baseUrl}/finalize-batches`, config)
             .then((res) => {
-                return res.data;
+                return res.data.data;
             })
             .catch((err) => {
                 console.log("An error occurred communicating with the API while finalizing prepared batches: ", err)

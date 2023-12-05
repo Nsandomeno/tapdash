@@ -8,8 +8,8 @@
             <slot />
 
             <button
-                :disabled="!enableClose" 
-                :class="enableClose ? 'enabled' : 'disabled'" 
+                :disabled="lockClose" 
+                :class="!lockClose ? 'enabled' : 'disabled'" 
                 @click="close" 
                 type="button"
             >
@@ -33,19 +33,22 @@
   import { computed, getCurrentInstance } from "vue";
 
   export default {
-    props: ["modalActive", "valid"],
-
+    props: {
+      modalActive: { type: Boolean, default: () => false },
+      valid      : { type: Boolean, default: () => false },
+      isLoading  : { type: Boolean, default: () => false },
+      isError    : { type: Boolean, default: () => false },
+      lockClose  : { type: Boolean, default: () => false },
+    },
     setup(props, { emit }) {
       const instance = getCurrentInstance();
 
       const close = () => {
-        //emit("close");
-        instance.parent.emit("close")
+        instance.parent.emit("close");
       };
 
       const confirm = () => {
-        //emit("confirm");
-        instance.parent.emit("confirm")
+        instance.parent.emit("confirm");
       }
 
       const enableClose = computed(() => {

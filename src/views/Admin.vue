@@ -3,12 +3,16 @@
     <div v-if="showData" class="success">
         <AddBatch
             @close="toggleNewBatch"
-            @confirm="mintNewBatch"
+            @confirm="handleNewBatchConfirm"
             @update-add-batch="event => newBatchAddedSupply = event"
             
             :name="newBatchAssetName"
             :modalActive="newBatchModal"
-            :valid="newBatchSupplyValid"
+            :valid="newBatchSupplyValid && !updateInProgress"
+            :isLoading="updateInProgress"
+            :isError="reqError"
+            :reqProcessed="hasNewBatchResponse"
+            :resDetails="newBatchModalUpdate"
         />
 
         <div class="container-left">
@@ -19,10 +23,16 @@
             <h1>Create Asset</h1>
             <CreateAsset
                 @close="toggleNewAsset"
-                @confirm="mintNewAsset"
+                @confirm="handleNewAssetConfirm"
                 @update-new-asset="handleNewAssetData"
+
                 :modalActive="newAssetModal"
-                :valid="newAssetValid"
+                :valid="newAssetValid && !updateInProgress"
+                :lockClose="updateInProgress"
+                :isLoading="updateInProgress"
+                :isError="reqError"   
+                :reqProcessed="hasNewAssetResponse"
+                :resDetails="newAssetModalUpdate"         
             />
             <button @click="toggleNewAsset" class="enabled">
                 Create Asset
@@ -68,9 +78,10 @@ export default {
         const client = new Api();
         // states
         const error = ref(false);
+        const reqError = ref(false);
         const errorMsg = ref("");
         const isLoading = ref(true);
-        const addBatchSucceeded = ref(false);
+
         const updateInProgress = ref(false);
         const updateMsg = ref("");
         // prereq. data
@@ -84,10 +95,22 @@ export default {
             enable_emissions: false,
             form_valid: false,
         });
+        const newAssetResponse = reactive({
+            success: null,
+            name: null,
+            amount: null,
+            txid: null,
+        });
         // add group / add supply to existing asset
         const newBatchModal = ref(false);
         const newBatchAssetName = ref("");
         const newBatchAddedSupply = ref(0);
+        const newBatchResponse = reactive({
+            success: null,
+            name: null,
+            amount: null,
+            txid: null,
+        });
 
         const showData = computed(() => {
             return !error.value && !isLoading.value;
@@ -99,6 +122,52 @@ export default {
 
         const showError = computed(() => {
             return error.value && !isLoading.value;
+        });
+
+        const hasNewAssetResponse = computed(() => {
+            return newAssetResponse.success !== null;
+        });
+
+        const newAssetModalUpdate = computed(() => {
+            // req and failure
+            if (reqError.value) {
+                return {
+                    "headline": "Mint asset failed.",
+                    "detail": "Contact support to find out more."
+                }
+            // req and success
+            } else if (hasNewAssetResponse.value) {
+                return {
+                    "headline": `Minted ${newAssetResponse.name}!`,
+                    "detail"  : `Initial supply: ${newAssetResponse.amount}.`
+                }
+            } else {
+                // no request attempted yet
+                return null;
+            }
+        });
+
+        const hasNewBatchResponse = computed(() => {
+            return newBatchResponse.success !== null;
+        });
+
+        const newBatchModalUpdate = computed(() => {
+            // req and failure
+            if (reqError.value) {
+                return {
+                    "headline": "New batch mint failed.",
+                    "detail": "Contact support to find out more."
+                }
+            // req and success
+            } else if (hasNewBatchResponse.value) {
+                return {
+                    "headline": `Minted new batch of ${newBatchResponse.name}`,
+                    "detail": `New supply: ${newBatchResponse.amount}`
+                }
+            } else {
+                // no request attempt
+                null;
+            }
         });
 
         const getWalletBalance = async () => {
@@ -127,6 +196,17 @@ export default {
             }
         };
 
+        const reload = async () => {
+            isLoading.value = true;
+
+            await Promise.all([getWalletBalance(), getAssets()])
+                .finally(() => {
+                    clearNewBatchState();
+                    clearNewAssetState();
+                    isLoading.value = false;
+                });
+        };
+
         onBeforeMount(async () => {
             await Promise.all([getWalletBalance(), getAssets()])
                 .finally(() => {
@@ -138,69 +218,85 @@ export default {
             /**
              * @mintNewAsset
              */
+            let useError = true;
+
             updateInProgress.value = true;
             updateMsg.value = "Adding pending batch of new asset."
-
+            
             const data = {
-                "name": newAssetData.value.name,
-                "amount": newAssetData.value.amount,
-                "enable_emissions": newAssetData.value.enable_emissions
+                "name": newAssetData.name,
+                "amount": newAssetData.amount,
+                "enable_emissions": newAssetData.enable_emissions
             }
-            const res = await client.mintAsset(data);
+
+            const res = await client.quickMintAsset(data);
+
             if (res) {
-                console.log("confirm pending batch for new asset: ", newName.value, "response: ", res);
-                // TODO
-                // happy path
-            } else {
-                // TODO
-                // error handling
+
+                if (res?.success) {
+                    // TODO works for single asset mints/broadcasts
+                    // only.
+                    useError = false;
+                    newAssetResponse.success = res.success;
+
+                    let asset = res.data[0];
+
+                    newAssetResponse.name = asset.name;
+                    newAssetResponse.amount = asset.amount;
+                    newAssetResponse.txid = asset.txid;
+                }
             }
+
+            if (useError) {
+                errorMsg.value = "Failed to mint new asset.";
+                reqError.value  = true;
+            }
+
+            updateMsg.value = "";
+            updateInProgress.value = false;
         };
 
         const mintNewBatch = async () => {
             /**
              * @mintNewBatch
              */
+            let useError = true;
+
             updateInProgress.value = true;
             updateMsg.value = "Adding pending batch of asset."
 
-            const res = await client.mintNewGroup(
+            const res = await client.quickMintNewGroup(
                 newBatchAssetName.value, 
                 newBatchAddedSupply.value
             );
             if (res) {
                 console.log("confirm pending batch for existing asset: ", newBatchAssetName.value, "response: ", res);
-                // TODO 
-                // handle mint new batch existing asset
-                
-                //addBatchSucceeded.value = true;
-            } else {
-                // TODO
-                //error handling
-            }
-        };
+                if (res?.success) {
+                    // TODO works for single asset mints only.
+                    useError = false;
+                    newBatchResponse.success = res.success;
 
-        const finalizeBatches = async () => {
-            /**
-             * @general
-             * @TODO handle the finalize on the backend or frontend?
-             */
-            updateInProgress.value = true;
-            updateMsg.value = "Broadcasting pending batches.";
+                    let asset = res.data[0];
 
-            const res = await client.finalizeBatches();
-            if (res) {
-                console.log("finalizing batches response: ", res);
-                // TODO
-                // happy path
-            } else {
-                // TODO
-                // error handling
+                    newBatchResponse.name = asset.name;
+                    newBatchResponse.txid = asset.txid;
+                    newBatchResponse.amount = asset.amount;
+                }
             }
+            // handle error
+            if (useError) {
+                errorMsg.value = "";
+                reqError.value = true;
+            }
+            updateMsg.value = "";
+            updateInProgress.value = false;
         };
 
         const handleNewAssetData = (e) => {
-            newAssetData.value = e;
+            newAssetData.name = e.name;
+            newAssetData.amount = e.amount;
+            newAssetData.enable_emissions = e.enable_emissions;
+            newAssetData.form_valid = e.form_valid;
         };
 
         const newBatchSupplyValid = computed(() => {
@@ -213,15 +309,25 @@ export default {
         const newAssetValid = computed(() => {
             /**
              * @mintNewAsset
+             * 
+             * @sanityCheckMode ON - maybe weird reactivity issue.
              */
-            return newAssetData.value?.form_valid;
+            let formValid = newAssetData?.form_valid;
+            if (formValid) {
+                return true;
 
+            } else if (formValid === false) {
+                return false;
+            }
+
+            return false;
         });
 
         const openNewBatchModal = (e) => {
             /**
              * @mintNewBatch
              */
+            console.log("Opening new batch modal: ", e);
             newBatchAssetName.value = e;
             newBatchModal.value = true;
         }
@@ -233,23 +339,104 @@ export default {
             newAssetModal.value = true;
         };
 
-        const toggleNewBatch = () => {
+        const toggleNewBatch = async () => {
             /**
              * @mintNewBatch
              */
-            newBatchModal.value = !newBatchModal.value;
+            if (hasNewBatchResponse.value) {
+                // close clicked after request
+                // trigger refresh
+                newBatchModal.value = false;
+                await reload();
+            } else {
+                newBatchModal.value = !newBatchModal.value;
+            }
         };
 
-        const toggleNewAsset = () => {
+        const clearNewBatchState = () => {
+            /**
+             * @mintNewBatch
+             */
+            newBatchAddedSupply.value = 0;
+            newBatchAssetName.value   = "";
+
+            newBatchResponse.success = null;
+            newBatchResponse.name    = null;
+            newBatchResponse.amount  = null;
+
+            updateMsg.value = "";
+            reqError.value  = false;
+        };
+
+        const clearNewAssetState = () => {
             /**
              * @mintNewAsset
              */
-            newAssetModal.value = !newAssetModal.value;
+            newAssetData.amount = null;
+            newAssetData.name = "";
+            newAssetData.enable_emissions = false;
+            newAssetData.form_valid = false;
+
+            newAssetResponse.success = null;
+            newAssetResponse.amount = null;
+            newAssetResponse.name = null;
+            newAssetResponse.txid = null;
+
+            updateMsg.value = "";
+            reqError.value = false;
+        };
+
+        const toggleNewAsset = async () => {
+            /**
+             * @mintNewAsset
+             */
+            if (hasNewAssetResponse.value) {
+                // close clicked after request
+                // trigger refresh and reload
+                newAssetModal.value = false;
+                await reload();
+            } else {
+                newAssetModal.value = !newAssetModal.value;
+            }
+        };
+
+        const handleNewAssetConfirm = async () => {
+            /**
+             * @mintNewAsset
+             */
+            if (hasNewAssetResponse.value) {
+                // confirm clicked after request
+                // trigger refresh and reload
+                newAssetModal.value = false;
+                await reload();
+            } else {
+                // mintAsset
+                await mintNewAsset();
+            }
+        }
+
+        const handleNewBatchConfirm = async () => {
+            /**
+             * @mintNewBatch
+             */
+            if (hasNewBatchResponse.value) {
+                // confirm clicked after request
+                // trigger refresh and reload
+                newBatchModal.value = false;
+                await reload();
+            } else {
+                // mintNewBatch
+                await mintNewBatch();
+            }
         };
 
         return {
+            // request handling
+            hasNewAssetResponse,
+            hasNewBatchResponse,
             // state details
             error,
+            reqError,
             errorMsg,
             isLoading,
             showError,
@@ -260,6 +447,8 @@ export default {
             // modals
             newBatchModal,
             newAssetModal,
+            newBatchModalUpdate,
+            newAssetModalUpdate,
             openNewBatchModal,
             handleNewAssetData,
             newAssetValid,
@@ -270,6 +459,8 @@ export default {
             newBatchAddedSupply,
             mintNewBatch,
             mintNewAsset,
+            handleNewAssetConfirm,
+            handleNewBatchConfirm,
             newBatchSupplyValid,
 
         }
