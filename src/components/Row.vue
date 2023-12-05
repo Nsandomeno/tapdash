@@ -3,23 +3,22 @@
         <th scope="row">{{ row.name }}</th>
         <td>{{ row.supply }}</td>
         <td>
- 
-                <button
-                    v-bind="props"
-                    @click="initModal" 
-                    :disabled="!enableAdd" 
-                    :class="enableAdd ? 'enabled' : 'disabled'"
-                >
-                    Add Tranche
-                </button>
+                <Button
+                    @btn-click="initModal"
+                    :enabled="enableAdd"
+                    :text="'Add Tranche'"
+                />
 
         </td>
     </tr>
 </template>
 <script>
-import { Api } from "@/api.js";
-import { ref, toRef, computed, onBeforeMount, toRaw, getCurrentInstance } from "vue";
+import Button from "./Button.vue";
+import { ref, toRef, computed, onBeforeMount, getCurrentInstance } from "vue";
 export default {
+    components: {
+        Button,
+    },
     props: {
         row: {  type: Object, required: true },
         assets: { type: Array, required: true },
@@ -27,11 +26,7 @@ export default {
     },
     setup(props) {
         const instance = getCurrentInstance();
-        //const client = new Api();
-
         const data = toRef(props, "row");
-        //const userAssets = toRef(props, "assets");
-
         /**
          * @note updateInProgress is an unused controller for handling the
          * state where at least one update is in progress.
@@ -47,12 +42,11 @@ export default {
             return true;
         });
 
-        const initModal = async () => {
+        const initModal = () => {
             /**
              * @event
              * 
              */
-            console.log("TODO pop modal when attempting to add new batch for existing asset.");
             instance.parent.emit("init-modal", selectedAsset.value)
         };
 

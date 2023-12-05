@@ -54,6 +54,7 @@
         },
         setup(props, { emit }) {
             const newSupply = ref(0);
+            const isOpen    = toRef(props, "modalActive");
             const reqStatus = toRef(props, "reqProcessed");
             const response  = toRef(props, "resDetails");
 
@@ -82,8 +83,15 @@
                 }
             });
 
-            watch(newSupply, (newInput, oldInput) => {
+            watch(newSupply, (newVal, oldVal) => {
                 updateAddBatch();
+            });
+
+            watch(isOpen, (newVal, oldVal) => {
+                // reset if oldVal was open and newVal is closed
+                if (oldVal && !newVal) {
+                    reset();
+                }
             });
 
             return {

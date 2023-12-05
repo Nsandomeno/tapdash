@@ -85,6 +85,7 @@ export default {
         // make props reactive
         //const errorState  = toRef(props, "isError");
         //const loadingState = toRef(props, "isLoading");
+        const isOpen = toRef(props, "modalActive");
         const reqStatus   = toRef(props, "reqProcessed");
         const response  = toRef(props, "resDetails");
 
@@ -134,6 +135,13 @@ export default {
             }
         });
 
+        const reset = () => {
+            // clear
+            initSupply.value = 0;
+            assetName.value  = "";
+            enableEmissions.value = false;
+        };
+
         watch(isNewAssetReady, (newVal, oldVal) => {
             if (newVal) {
                 // reached validated state for the first time
@@ -141,6 +149,13 @@ export default {
             } else if (!newVal && oldVal) {
                 // input receeded from valid to invalid state
                 updateNewAsset();
+            }
+        });
+
+        watch(isOpen, (newVal, oldVal) => {
+            // reset if oldVal was open and newVal is closed
+            if (oldVal && !newVal) {
+                reset();
             }
         });
 

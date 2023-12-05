@@ -10,6 +10,7 @@
             :modalActive="newBatchModal"
             :valid="newBatchSupplyValid && !updateInProgress"
             :isLoading="updateInProgress"
+            :lockClose="updateInProgress"
             :isError="reqError"
             :reqProcessed="hasNewBatchResponse"
             :resDetails="newBatchModalUpdate"
@@ -34,9 +35,7 @@
                 :reqProcessed="hasNewAssetResponse"
                 :resDetails="newAssetModalUpdate"         
             />
-            <button @click="toggleNewAsset" class="enabled">
-                Create Asset
-            </button>
+            <Button @btn-click="toggleNewAsset" :text="'Create Asset'" />
         </div>
 
         <div class="container-right">
@@ -67,49 +66,50 @@ import { Api } from "@/api.js";
 import Table from "@/components/Table.vue";
 import CreateAsset from "@/components/modal/impls/CreateAsset.vue";
 import AddBatch from "@/components/modal/impls/AddBatch.vue";
-
+import Button from "@/components/Button.vue";
 export default { 
     components: {
         Table,
         AddBatch,
+        Button,
         CreateAsset,
     },
     setup() {
         const client = new Api();
         // states
-        const error = ref(false);
-        const reqError = ref(false);
-        const errorMsg = ref("");
+        const error     = ref(false);
+        const reqError  = ref(false);
+        const errorMsg  = ref("");
         const isLoading = ref(true);
 
         const updateInProgress = ref(false);
-        const updateMsg = ref("");
+        const updateMsg        = ref("");
         // prereq. data
-        const assets = ref([]);
+        const assets  = ref([]);
         const balance = ref(null);
         // new asset
         const newAssetModal = ref(false);
-        const newAssetData = reactive({
-            name: "",
-            amount: null,
-            enable_emissions: false,
-            form_valid: false,
+        const newAssetData  = reactive({
+            name              : "",
+            amount            : null,
+            enable_emissions  : false,
+            form_valid        : false,
         });
         const newAssetResponse = reactive({
-            success: null,
-            name: null,
-            amount: null,
-            txid: null,
+            success : null,
+            name    : null,
+            amount  : null,
+            txid    : null,
         });
         // add group / add supply to existing asset
-        const newBatchModal = ref(false);
-        const newBatchAssetName = ref("");
+        const newBatchModal       = ref(false);
+        const newBatchAssetName   = ref("");
         const newBatchAddedSupply = ref(0);
-        const newBatchResponse = reactive({
-            success: null,
-            name: null,
-            amount: null,
-            txid: null,
+        const newBatchResponse    = reactive({
+            success : null,
+            name    : null,
+            amount  : null,
+            txid    : null,
         });
 
         const showData = computed(() => {
@@ -497,19 +497,5 @@ export default {
 .success {
     display: flex;
     width: 100%;
-}
-/* TODO duplicated many places */
-.disabled {
-    background: grey;
-    color: black;
-    padding: 4px;
-    border-radius: 4px;
-}
-/* TODO duplicated many places */
-.enabled {
-    background: green;
-    color: black;
-    padding: 4px;
-    border-radius: 4px;
 }
 </style>

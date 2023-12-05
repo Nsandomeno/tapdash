@@ -40,7 +40,7 @@
       isError    : { type: Boolean, default: () => false },
       lockClose  : { type: Boolean, default: () => false },
     },
-    setup(props, { emit }) {
+    setup() {
       const instance = getCurrentInstance();
 
       const close = () => {
@@ -50,16 +50,8 @@
       const confirm = () => {
         instance.parent.emit("confirm");
       }
-
-      const enableClose = computed(() => {
-        /**
-         * @TODO 
-         * @UNIMPLEMENTED
-         */
-        return true;
-      });
   
-      return { close, confirm, enableClose };
+      return { close, confirm };
     },
   };
   </script>
