@@ -1,60 +1,41 @@
 <template>
 <div class="container">
     <div v-if="showData" class="success">
-
-        <Modal
-            @close="toggle"
+        <AddBatch
+            @close="toggleNewBatch"
             @confirm="mintNewBatch"
-            :modalActive="openModal"
-            :valid="isBatchSupplyValid"
-        >
-            <div class="modal-custom">
-                <h1 class="modal-title">Add Tranch</h1>
-                <h3 class="new-batch-asset">Asset: {{ newBatch }}</h3>
-                <h5>Note: this will not immediately broadcast the assets.</h5>
-                <div class="input-field-sm">
-                    <label class="input-label-sm">New Supply (Added Supply): </label>
-                    <input
-                        :value="addAmt"
-                        @input="event => addAmt = event.target.value"
-                    >
-                </div>
-            </div>
-        </Modal>
+            @update-add-batch="event => newBatchAddedSupply = event"
+            
+            :name="newBatchAssetName"
+            :modalActive="newBatchModal"
+            :valid="newBatchSupplyValid"
+        />
+
         <div class="container-left">
-            <h1>Available Balance: {{  balance }}</h1>
+            <h1>Available Balance: {{ balance }}</h1>
         </div>
+
         <div class="container-middle">
-            <h1>Mint</h1>
-            <div class="input-field">
-                <label>Asset Name: </label>
-                <input
-                    :value="newName"
-                    @input="event => newName = event.target.value"
-                >
-            </div>
-            <div class="input-field">
-                <label class="input-label">Initial Supply: </label>
-                <input
-                    :value="newAmount"
-                    @input="event => newAmount = event.target.value"
-                >
-            </div>
-            <div class="select-field">
-                <select class="select-btn" v-model="enableEmissions">
-                <option value="true">true</option>
-                <option value="false">false</option>
-            </select>
-            </div>
-                <button :disabled="!enableMint" :class="enableMint ? 'enabled' : 'disabled'">Mint New Asset</button>
+            <h1>Create Asset</h1>
+            <CreateAsset
+                @close="toggleNewAsset"
+                @confirm="mintNewAsset"
+                @update-new-asset="handleNewAssetData"
+                :modalActive="newAssetModal"
+                :valid="newAssetValid"
+            />
+            <button @click="toggleNewAsset" class="enabled">
+                Create Asset
+            </button>
         </div>
+
         <div class="container-right">
-            <h1>Issued Assets</h1>
+            <h1>Manage Assets</h1>
             <Table
                 :data="assets"
                 :assets="assets"
                 :isUpdating="isLoading"
-                @init-modal="popModal"
+                @init-modal="openNewBatchModal"
             />
         </div>
     </div>
@@ -71,40 +52,42 @@
 </template>
 <script>
 
-import { ref, onBeforeMount, computed } from "vue";
+import { ref, onBeforeMount, computed, reactive } from "vue";
 import { Api } from "@/api.js";
 import Table from "@/components/Table.vue";
-import Modal from "@/components/Modal.vue";
+import CreateAsset from "@/components/modal/impls/CreateAsset.vue";
+import AddBatch from "@/components/modal/impls/AddBatch.vue";
 
 export default { 
     components: {
         Table,
-        Modal,
+        AddBatch,
+        CreateAsset,
     },
     setup() {
         const client = new Api();
-        // form
-        const newName = ref("");
-        const newAmount = ref("");
-        const enableEmissions = ref(null);
-
-        const openModal = ref(false);
-
+        // states
         const error = ref(false);
         const errorMsg = ref("");
         const isLoading = ref(true);
-
-        const assets = ref([]);
-        const balance = ref(null);
-        // TODO implement modal and addBatch
+        const addBatchSucceeded = ref(false);
         const updateInProgress = ref(false);
         const updateMsg = ref("");
-        // the asset name
-        const newBatch = ref("");
-        // new supply addition
-        const addAmt = ref("");
-        // add batch successful?
-        const addBatchSucceeded = ref(false);
+        // prereq. data
+        const assets = ref([]);
+        const balance = ref(null);
+        // new asset
+        const newAssetModal = ref(false);
+        const newAssetData = reactive({
+            name: "",
+            amount: null,
+            enable_emissions: false,
+            form_valid: false,
+        });
+        // add group / add supply to existing asset
+        const newBatchModal = ref(false);
+        const newBatchAssetName = ref("");
+        const newBatchAddedSupply = ref(0);
 
         const showData = computed(() => {
             return !error.value && !isLoading.value;
@@ -114,14 +97,16 @@ export default {
             return showData.value && assets.value.length < 1;
         });
 
-        const enableMint = computed(() => {
-            return newName.value.length > 0 && newAmount.value.length > 0 && enableEmissions.value;
-        })
+        const showError = computed(() => {
+            return error.value && !isLoading.value;
+        });
 
         const getWalletBalance = async () => {
+            /**
+             * @initialLoad
+             */
             const res = await client.walletBalance();
             if (res) {
-                //console.log(res)
                 balance.value = res.confirmedBalance; 
             } else {
                 error.value = true;
@@ -130,62 +115,16 @@ export default {
         };
 
         const getAssets = async () => {
+            /**
+             * @initialLoad
+             */
             const res = await client.listAssets();
             if (res) {
-                console.log(res)
                 assets.value = res;
             } else {
                 error.value = true;
                 errorMsg.value = "Failed to get balance."                
             }
-        };
-
-        const mintNewBatch = async () => {
-            updateInProgress.value = true;
-            updateMsg.value = "Adding pending batch of asset."
-
-            const res = await client.mintNewGroup(newBatch.value, addAmt.value);
-            if (res) {
-                console.log("confirm batch res: ", res);
-                // TODO handle mint new batch existing asset
-
-                //addBatchSucceeded.value = true;
-            }
-        }
-        
-        const showError = computed(() => {
-            return error.value && !isLoading.value;
-        });
-
-        const isBatchSupplyValid = computed(() => {
-            /**
-             * @TODO validate value set by setAmt
-             */
-            return addAmt.value.length > 0;
-        });
-
-        const setAmt = (e) => {
-            /**
-             * @TODO clean how supply for a new group
-             * of an existing asset is validated.
-             */
-            addAmt.value = e;
-        }
-
-
-        const popModal = (e) => {
-            /**
-             * @initModal Event
-             * opens modal
-             */
-            newBatch.value = e;
-            openModal.value = true;
-
-            console.log("TODO addBatch and modal UI")
-        }
-
-        const toggle = () => {
-            openModal.value = !openModal.value;
         };
 
         onBeforeMount(async () => {
@@ -195,7 +134,121 @@ export default {
                 })
         });
 
+        const mintNewAsset = async () => {
+            /**
+             * @mintNewAsset
+             */
+            updateInProgress.value = true;
+            updateMsg.value = "Adding pending batch of new asset."
+
+            const data = {
+                "name": newAssetData.value.name,
+                "amount": newAssetData.value.amount,
+                "enable_emissions": newAssetData.value.enable_emissions
+            }
+            const res = await client.mintAsset(data);
+            if (res) {
+                console.log("confirm pending batch for new asset: ", newName.value, "response: ", res);
+                // TODO
+                // happy path
+            } else {
+                // TODO
+                // error handling
+            }
+        };
+
+        const mintNewBatch = async () => {
+            /**
+             * @mintNewBatch
+             */
+            updateInProgress.value = true;
+            updateMsg.value = "Adding pending batch of asset."
+
+            const res = await client.mintNewGroup(
+                newBatchAssetName.value, 
+                newBatchAddedSupply.value
+            );
+            if (res) {
+                console.log("confirm pending batch for existing asset: ", newBatchAssetName.value, "response: ", res);
+                // TODO 
+                // handle mint new batch existing asset
+                
+                //addBatchSucceeded.value = true;
+            } else {
+                // TODO
+                //error handling
+            }
+        };
+
+        const finalizeBatches = async () => {
+            /**
+             * @general
+             * @TODO handle the finalize on the backend or frontend?
+             */
+            updateInProgress.value = true;
+            updateMsg.value = "Broadcasting pending batches.";
+
+            const res = await client.finalizeBatches();
+            if (res) {
+                console.log("finalizing batches response: ", res);
+                // TODO
+                // happy path
+            } else {
+                // TODO
+                // error handling
+            }
+        };
+
+        const handleNewAssetData = (e) => {
+            newAssetData.value = e;
+        };
+
+        const newBatchSupplyValid = computed(() => {
+            /**
+             * @mintNewBatch
+             */
+            return newBatchAddedSupply.value > 0;
+        });
+
+        const newAssetValid = computed(() => {
+            /**
+             * @mintNewAsset
+             */
+            return newAssetData.value?.form_valid;
+
+        });
+
+        const openNewBatchModal = (e) => {
+            /**
+             * @mintNewBatch
+             */
+            newBatchAssetName.value = e;
+            newBatchModal.value = true;
+        }
+
+        const openNewAssetModal = (e) => {
+            /**
+             * @mintNewAsset
+             */
+            newAssetModal.value = true;
+        };
+
+        const toggleNewBatch = () => {
+            /**
+             * @mintNewBatch
+             */
+            newBatchModal.value = !newBatchModal.value;
+        };
+
+        const toggleNewAsset = () => {
+            /**
+             * @mintNewAsset
+             */
+            newAssetModal.value = !newAssetModal.value;
+        };
+
         return {
+            // state details
             error,
             errorMsg,
             isLoading,
@@ -204,19 +257,21 @@ export default {
             noData,
             assets,
             balance,
-            openModal,
-            popModal,
-            newName,
-            newAmount,
-            enableMint,
-            enableEmissions,
+            // modals
+            newBatchModal,
+            newAssetModal,
+            openNewBatchModal,
+            handleNewAssetData,
+            newAssetValid,
             updateInProgress,
-            newBatch,
-            setAmt,
-            toggle,
-            addAmt,
+            newBatchAssetName,
+            toggleNewBatch,
+            toggleNewAsset,
+            newBatchAddedSupply,
             mintNewBatch,
-            isBatchSupplyValid,
+            mintNewAsset,
+            newBatchSupplyValid,
+
         }
     }
 }
@@ -252,17 +307,6 @@ export default {
     display: flex;
     width: 100%;
 }
-.form {
-    height: 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-}
-.select-field {
-    margin-bottom: 60px;
-    margin-top: 10px;
-}
 /* TODO duplicated many places */
 .disabled {
     background: grey;
@@ -276,29 +320,5 @@ export default {
     color: black;
     padding: 4px;
     border-radius: 4px;
-}
-.modal-custom {
-    display: flex;
-    justify-content: space-around;
-    flex-direction: column;
-    align-items: center;
-}
-.modal-title {
-    margin-bottom: 4px;
-}
-.input-field {
-    display: flex;
-    width: 256px;
-    margin-bottom: 12px;
-    justify-content: space-between;
-}
-.input-field-sm {
-    margin-bottom: 4px;
-}
-.select-field {
-    width: 256px;
-}
-.select-btn {
-    width: 100%;
 }
 </style>
