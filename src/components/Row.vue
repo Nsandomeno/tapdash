@@ -1,7 +1,9 @@
 <template>
+
     <tr>
-        <th scope="row">{{ row.name }}</th>
-        <td>{{ row.supply }}</td>
+        
+        <td scope="row">{{ row.name }}</td>
+        <td class="mid-col">{{ row.supply }}</td>
         <td>
                 <Button
                     @btn-click="initModal"
@@ -10,7 +12,9 @@
                 />
 
         </td>
+        
     </tr>
+
 </template>
 <script>
 import Button from "./Button.vue";
@@ -63,20 +67,7 @@ export default {
 }
 </script>
 <style scoped>
-.container-row {
-    width: 100%;
-    height: 100%;
-}
-.disabled {
-    background: grey;
-    color: black;
-    padding: 4px;
-    border-radius: 4px;
-}
-.enabled {
-    background: green;
-    color: black;
-    padding: 4px;
-    border-radius: 4px;
-}
+    td {
+        border-bottom: 1px grey solid;
+    }
 </style>
