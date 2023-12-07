@@ -16,11 +16,11 @@
             :resDetails="newBatchModalUpdate"
         />
 
-        <div class="container-left">
+        <div class="container-left card">
             <h1>Available Balance: {{ balance }}</h1>
         </div>
 
-        <div class="container-middle">
+        <div class="container-middle card">
             <h1>Create Asset</h1>
             <CreateAsset
                 @close="toggleNewAsset"
@@ -38,7 +38,7 @@
             <Button @btn-click="toggleNewAsset" :text="'Create Asset'" />
         </div>
 
-        <div class="container-right">
+        <div class="container-right card">
             <h1>Manage Assets</h1>
             <Table
                 :data="assets"
@@ -343,7 +343,9 @@ export default {
             /**
              * @mintNewBatch
              */
+            console.log("toggle new batch modal");
             if (hasNewBatchResponse.value) {
+                console.log("toggling, ", hasNewAssetResponse.value)
                 // close clicked after request
                 // trigger refresh
                 newBatchModal.value = false;
@@ -469,33 +471,37 @@ export default {
 </script>
 
 <style scoped>
-.container {
+/* .container {} */
+
+.success {
     display: flex;
     width: 100%;
-    justify-content: space-evenly;
+}
+.card {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    transition: 0.3s;
+    border-radius: 5px;
+    background-color: rgba(0, 255, 0, 0.1);
 }
 .container-left {
     display: flex;
     width: 33%;
     flex-direction: column;
-    justify-content: flex-start;
+    margin: 8px;
 }
 .container-middle {
     display: flex;
-    width: 33%;
+    width: 20%;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
+    align-items: center;
+    margin: 8px;
 }
 .container-right {
     display: flex;
-    width: 33%;
+    width: 46%;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
-}
-.success {
-    display: flex;
-    width: 100%;
+    align-items: center;
+    margin: 8px
+
 }
 </style>

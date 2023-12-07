@@ -90,7 +90,7 @@
             watch(isOpen, (newVal, oldVal) => {
                 // reset if oldVal was open and newVal is closed
                 if (oldVal && !newVal) {
-                    reset();
+                    newSupply.value = 0;
                 }
             });
 

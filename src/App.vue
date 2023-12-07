@@ -1,15 +1,17 @@
 <template>
-  <h1 class="heading">tapDash</h1>
-  <Admin />
+
+  <Nav />
+  <router-view></router-view>
+
 </template>
 
 <script>
-import Admin from "@/views/Admin.vue"
+import Nav from "@/components/Nav.vue"
 
 export default {
   name: 'App',
   components: {
-    Admin
+    Nav,
   }
 }
 </script>
@@ -22,11 +24,5 @@ export default {
   text-align: center;
   color: #2c3e50;
   padding: 12px;
-}
-
-.heading {
-  margin-bottom: 20px;
-  text-align: left;
-  margin-left: 26px;
 }
 </style>

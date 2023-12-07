@@ -44,9 +44,7 @@ export default {
         width: 100%;
         height: 200px;
         overflow-y: auto;
-    }
-    th {
-        border-bottom: 2px solid black;
+        padding: 2px;
     }
     .tbl-row {
         border-bottom: 2px solid black;

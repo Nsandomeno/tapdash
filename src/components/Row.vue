@@ -2,22 +2,38 @@
 
     <tr>
         
-        <td scope="row">{{ row.name }}</td>
+        <td @click="goToAssetHistory" scope="row">{{ row.name }}</td>
         <td class="mid-col">{{ row.supply }}</td>
         <td>
                 <Button
-                    @btn-click="initModal"
+                    @btn-click="initAddBatchModal"
                     :enabled="enableAdd"
                     :text="'Add Tranche'"
                 />
 
         </td>
-        
+        <td>
+                <Button
+                    @btn-click="console.log('TODO implement!')"
+                    :enabled="false"
+                    :text="'Connect Price Oracle'"
+                />
+
+        </td>
+        <td>
+                <Button
+                    @btn-click="console.log('TODO implement!')"
+                    :enabled="false"
+                    :text="'Distribute'"
+                />
+
+        </td>
     </tr>
 
 </template>
 <script>
 import Button from "./Button.vue";
+import { useRouter } from "vue-router";
 import { ref, toRef, computed, onBeforeMount, getCurrentInstance } from "vue";
 export default {
     components: {
@@ -29,6 +45,7 @@ export default {
         isUpdating: { type: Boolean, default: () => false },
     },
     setup(props) {
+        const router = useRouter();
         const instance = getCurrentInstance();
         const data = toRef(props, "row");
         /**
@@ -46,7 +63,7 @@ export default {
             return true;
         });
 
-        const initModal = () => {
+        const initAddBatchModal = () => {
             /**
              * @event
              * 
@@ -54,14 +71,19 @@ export default {
             instance.parent.emit("init-modal", selectedAsset.value)
         };
 
+        const goToAssetHistory = () => {
+            router.push({ name: "asset", params: { id: data.value.name }})
+        };
+
         onBeforeMount(() => {
             selectedAsset.value = data.value.name;
         });
 
         return {
-            initModal,
+            initAddBatchModal,
             enableAdd,
             updateInProgress,
+            goToAssetHistory,
         }
     },
 }
