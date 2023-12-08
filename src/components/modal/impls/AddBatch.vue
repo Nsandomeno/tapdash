@@ -12,7 +12,7 @@
 
             <div v-else-if="displayForm">
             
-                <h5>Note: this will not immediately broadcast the assets.</h5>
+                <h5 class="warning">NOTE: THIS ASSET WILL BE BROADCAST IMMEDIATELY.</h5>
 
                 <div class="input-field-sm">
                     <label class="input-label-sm">New Supply (Added Supply): </label>
@@ -102,4 +102,9 @@
             }
         },
     }
-    </script>
+</script>
+<style scoped>
+.warning {
+    color: red;
+}
+</style>

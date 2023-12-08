@@ -15,7 +15,7 @@
         </div>
 
         <div v-else-if="displayForm"> 
-            <h5>Note: this will not immediately broadcast the assets.</h5>
+            <h5 class="warning">NOTE: THIS ASSET WILL BE BROADCAST IMMEDIATELY.</h5>
             <div class="input-field-sm"> 
                 <label class="input-label-sm">Asset Name: </label>
                 <input
@@ -30,7 +30,8 @@
                     @input="event => initSupply = event.target.value"
                 >
             </div>
-            <div> 
+            <div>
+                <label class="input-label-sm">Enable Emissions: </label>
                 <select class="select-btn" v-model="enableEmissions">
                     <option value="true">true</option>
                     <option value="false">false</option>
@@ -196,5 +197,8 @@ export default {
 }
 .select-btn {
     width: 100%;
+}
+.warning {
+    color: red;
 }
 </style>
