@@ -70,7 +70,7 @@ export class Api {
     async quickMintAsset(asset) {
         let config = this.axiosConfig;
         config["headers"] = this.headers;
-
+        
         return await axios.post(`${this.baseUrl}/fast-mint-asset`, asset, config)
             .then((res) => {
                 return res.data;
@@ -128,6 +128,24 @@ export class Api {
             })
             .catch((err) => {
                 console.log("An error occurred communicating with the API while finalizing prepared batches: ", err)
+                return null;
+            })
+    }
+    /**
+     * @TODO complete 
+     */
+    async assetStats(assetName) {
+        let config = this.axiosConfig;
+        config["headers"] = this.headers;
+        config["params"] = { "asset_name": assetName }
+        return await axios.get(`${this.baseUrl}/universe/asset/stats`, config)
+            .then((res) => {
+                // TODO 
+                console.log("Response from asset stats: ", res.data);
+                return res.data;
+            })
+            .catch((err) => {
+                console.log("An error occurred communicating with the API while querying asset stats: ", err);
                 return null;
             })
     }

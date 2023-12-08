@@ -27,7 +27,6 @@
                 <label class="input-label-sm">Initial Supply: </label>
                 <input
                     :value="initSupply"
-                    type="number"
                     @input="event => initSupply = event.target.value"
                 >
             </div>
@@ -90,7 +89,7 @@ export default {
         const response  = toRef(props, "resDetails");
 
         const validateSupply = () => {
-            return parseInt(initSupply.value) > 0;
+            return initSupply.value > 0;
         };
 
         const validateName = () => {
@@ -98,6 +97,7 @@ export default {
         };
 
         const updateNewAsset = () => {
+            console.log("updating supply ", initSupply.value)
             emit("update-new-asset", newAssetData.value);
         };
         
@@ -129,7 +129,7 @@ export default {
         const newAssetData = computed(() => {
             return {
                 "name": assetName.value,
-                "amount": parseInt(initSupply.value),
+                "amount": initSupply.value,
                 "enable_emissions": enableEmissions.value,
                 "form_valid": isNewAssetReady.value,
             }
@@ -141,7 +141,9 @@ export default {
             assetName.value  = "";
             enableEmissions.value = false;
         };
-
+        // TODO requires more validation
+        // TODO requires more updates after 
+        //      initially validated state i.e. last zero on init supply
         watch(isNewAssetReady, (newVal, oldVal) => {
             if (newVal) {
                 // reached validated state for the first time

@@ -185,7 +185,7 @@ export default {
 
         const getAssets = async () => {
             /**
-             * @initialLoad
+             * @initialLoad`
              */
             const res = await client.listAssets();
             if (res) {
@@ -228,7 +228,7 @@ export default {
                 "amount": newAssetData.amount,
                 "enable_emissions": newAssetData.enable_emissions
             }
-
+            console.log("Data send to api: ", data);
             const res = await client.quickMintAsset(data);
 
             if (res) {
